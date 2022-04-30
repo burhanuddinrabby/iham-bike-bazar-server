@@ -1,5 +1,5 @@
 const express = require('express')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
@@ -29,12 +29,35 @@ async function run() {
         const productCollection = client.db("iham-bikes").collection("bikes");
         // const orderCollection = client.db("gadgetFreak").collection("orders");
 
-
+        //all products
         app.get("/products", async (req, res) => {
             const query = {};
             const products = await productCollection.find(query).toArray();
-            console.log('inside get /products ->', products)
+            // console.log('inside get /products ->', products)
             res.send(products);
+        })
+
+        //single product
+        app.get("/product/:id", async (req, res) => {
+            const id = req.params.id;
+            const product = await productCollection.findOne({ _id: ObjectId(id) });
+            res.send(product);
+        })
+
+        //updating a product
+        app.put('/update-product/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedBikeInfo = req.body;
+            console.log(updatedBikeInfo);
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    quantity: updatedBikeInfo.quantity
+                }
+            }
+            const result = await productCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
         })
 
 
