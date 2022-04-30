@@ -27,7 +27,7 @@ async function run() {
         console.log('db connect')
 
         const productCollection = client.db("iham-bikes").collection("bikes");
-        // const orderCollection = client.db("gadgetFreak").collection("orders");
+        const orderCollection = client.db("iham-bikes").collection("orders");
 
         //all products
         app.get("/products", async (req, res) => {
@@ -48,7 +48,7 @@ async function run() {
         app.put('/update-product/:id', async (req, res) => {
             const id = req.params.id;
             const updatedBikeInfo = req.body;
-            console.log(updatedBikeInfo);
+            // console.log(updatedBikeInfo);
             const filter = { _id: ObjectId(id) };
             const options = { upsert: true };
             const updatedDoc = {
@@ -64,15 +64,39 @@ async function run() {
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            console.log(query);
-            // const result = await productCollection.deleteOne(query);
-            // res.send(result);
+            // console.log(query);
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
         })
 
         //adding a product
         app.post("/add-product", async (req, res) => {
             const bikeInfo = req.body;
             const result = await productCollection.insertOne(bikeInfo);
+            res.send(result);
+        })
+
+        //add to order
+
+        app.post("/add-order", async (req, res) => {
+            const orderInfo = req.body;//=> ...bike, email
+            // console.log(orderInfo);
+            const result = await orderCollection.insertOne(orderInfo);
+            res.send({ success: 'order complete' })
+        })
+
+        //order list *****
+        app.get("/order-list", async (req, res) => {
+            const email = req.query.email;
+            const orders = await orderCollection.find({ email }).toArray();
+            res.send(orders);
+        })
+
+        //delete from order
+        app.delete('/order-list/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
             res.send(result);
         })
 
