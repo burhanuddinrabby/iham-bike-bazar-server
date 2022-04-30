@@ -18,6 +18,32 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+// verify token function
+function verifyToken(req, res, next) {
+    // let email;
+
+    const tokenInfo = req.headers.authorization;
+    const token = tokenInfo?.split(" ")[1];
+    if (!tokenInfo) {
+        return res.status(401).send({ message: 'Unauthorized request' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+
+        if (err) {
+            // email = 'Invalid email'
+            return res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
+
+        }
+        // if (decoded) {
+        //     email = decoded
+        // }
+        //return email;
+        console.log(decoded);
+        req.decoded = decoded;
+        next();
+    })
+
+}
 
 
 
@@ -76,8 +102,14 @@ async function run() {
             res.send(result);
         })
 
-        //add to order
+        //jwt token
+        app.post("/login", (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+            res.send({ token })
+        })
 
+        //add to order
         app.post("/add-order", async (req, res) => {
             const orderInfo = req.body;//=> ...bike, email
             // console.log(orderInfo);
@@ -86,10 +118,15 @@ async function run() {
         })
 
         //order list *****
-        app.get("/order-list", async (req, res) => {
+        app.get("/order-list", verifyToken, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            const orders = await orderCollection.find({ email }).toArray();
-            res.send(orders);
+            if (decodedEmail === email) {
+                const orders = await orderCollection.find({ email }).toArray();
+                res.send(orders);
+            } else {
+                res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
+            }
         })
 
         //delete from order
@@ -114,17 +151,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`Iham listening to -> ${port}`)
 })
-
-// verify token function
-function verifyToken(token) {
-    let email;
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-        if (err) {
-            email = 'Invalid email'
-        }
-        if (decoded) {
-            email = decoded
-        }
-    });
-    return email;
-}
