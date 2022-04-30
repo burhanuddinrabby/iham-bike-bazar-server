@@ -13,15 +13,14 @@ require('dotenv').config()
 
 const port = process.env.PORT || 5000;
 
-
+//database connection
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kwytb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
 // verify token function
 function verifyToken(req, res, next) {
-    // let email;
-
+    //getting token from header
     const tokenInfo = req.headers.authorization;
     const token = tokenInfo?.split(" ")[1];
     if (!tokenInfo) {
@@ -30,15 +29,9 @@ function verifyToken(req, res, next) {
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
 
         if (err) {
-            // email = 'Invalid email'
             return res.status(403).send({ message: 'You are forbidden, if you try again I\'m gonna call the cops' })
 
         }
-        // if (decoded) {
-        //     email = decoded
-        // }
-        //return email;
-        console.log(decoded);
         req.decoded = decoded;
         next();
     })
@@ -59,7 +52,7 @@ async function run() {
         app.get("/products", async (req, res) => {
             const query = {};
             const products = await productCollection.find(query).toArray();
-            // console.log('inside get /products ->', products)
+            // console.log('inside products ->', products)
             res.send(products);
         })
 
@@ -74,7 +67,6 @@ async function run() {
         app.put('/update-product/:id', async (req, res) => {
             const id = req.params.id;
             const updatedBikeInfo = req.body;
-            // console.log(updatedBikeInfo);
             const filter = { _id: ObjectId(id) };
             const options = { upsert: true };
             const updatedDoc = {
@@ -90,7 +82,6 @@ async function run() {
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            // console.log(query);
             const result = await productCollection.deleteOne(query);
             res.send(result);
         })
@@ -102,7 +93,7 @@ async function run() {
             res.send(result);
         })
 
-        //jwt token
+        //jwt token while logging in
         app.post("/login", (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
@@ -112,12 +103,11 @@ async function run() {
         //add to order
         app.post("/add-order", async (req, res) => {
             const orderInfo = req.body;//=> ...bike, email
-            // console.log(orderInfo);
             const result = await orderCollection.insertOne(orderInfo);
             res.send({ success: 'order complete' })
         })
 
-        //order list *****
+        //order list
         app.get("/order-list", verifyToken, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
@@ -145,7 +135,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('This is iham bazar')
+    res.send('This is Iham bike bazar')
 })
 
 app.listen(port, () => {
