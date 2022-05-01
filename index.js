@@ -43,7 +43,7 @@ function verifyToken(req, res, next) {
 async function run() {
     try {
         await client.connect();
-        console.log('db connect')
+        // console.log('db connected')
 
         const productCollection = client.db("iham-bikes").collection("bikes");
         const orderCollection = client.db("iham-bikes").collection("orders");
